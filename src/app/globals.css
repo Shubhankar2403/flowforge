@@ -1,5 +1,6 @@
 /* globals.css for Tailwind CSS v4 */
 
+/* Tailwind v4: PostCSS-style imports */
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
 
@@ -13,12 +14,16 @@ body {
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  outline-color: hsl(var(--ring));
+  border-color: hsl(var(--border));
 }
 
 a {
@@ -45,15 +50,4 @@ a {
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
-}
-
-/* Optional global utilities */
-* {
-  outline-color: hsl(var(--ring));
-  border-color: hsl(var(--border));
-}
-
-body {
-  background-color: var(--background);
-  color: var(--foreground);
 }
