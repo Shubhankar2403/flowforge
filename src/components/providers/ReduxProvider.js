@@ -1,4 +1,3 @@
-// src/components/providers/ReduxProvider.jsx
 "use client";
 
 import { Provider } from "react-redux";

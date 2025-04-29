@@ -1,51 +1,100 @@
-"use client"
-import React, { useCallback } from "react"
+"use client";
+
+import { useSelector, useDispatch } from "react-redux";
+import { setNodes, setEdges, addNode } from "@/features/flowbuilder/flowSlice";
 import ReactFlow, {
   addEdge,
   Background,
   Controls,
   MiniMap,
-  useEdgesState,
-  useNodesState,
-} from "reactflow"
-import "reactflow/dist/style.css"
+  useReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
+  ReactFlowProvider,
+} from "reactflow";
 
-const initialNodes = [
-  {
-    id: "1",
-    position: { x: 100, y: 100 },
-    data: { label: "Start Node" },
-    type: "default",
-  },
-  {
-    id: "2",
-    position: { x: 300, y: 200 },
-    data: { label: "End Node" },
-    type: "default",
-  },
-]
+import CustomNode from "@/components/CustomNode";
+import Sidebar from "@/components/Sidebar";
 
-const initialEdges = [
-  { id: "e1-2", source: "1", target: "2", type: "smoothstep" },
-]
+import React, { useCallback } from "react";
+import { nanoid } from "nanoid";
 
-export default function FlowBuilder() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+const nodeTypes = {
+  editable: CustomNode,
+};
+
+function FlowCanvas() {
+  const nodes = useSelector((state) => state.flow.nodes);
+  const edges = useSelector((state) => state.flow.edges);
+  const dispatch = useDispatch();
+  const { project } = useReactFlow();
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData("application/reactflow");
+      
+      // Check if the dropped element is valid
+      if (typeof type === "undefined" || !type) {
+        return;
+      }
+
+      // Get position of the drop
+      const position = project({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const newNode = {
+        id: nanoid(),
+        type: "editable",
+        position,
+        data: {
+          label: `${type} Node`,
+          subtype: type,
+        },
+      };
+
+      dispatch(addNode(newNode));
+    },
+    [dispatch, project]
+  );
+
+  const onNodesChange = useCallback(
+    (changes) => {
+      dispatch(setNodes(applyNodeChanges(changes, nodes)));
+    },
+    [dispatch, nodes]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => {
+      dispatch(setEdges(applyEdgeChanges(changes, edges)));
+    },
+    [dispatch, edges]
+  );
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  )
+    (connection) => {
+      dispatch(setEdges(addEdge(connection, edges)));
+    },
+    [dispatch, edges]
+  );
 
   return (
-    <div className="h-[90vh] w-full">
+    <div className="w-full h-full" onDrop={onDrop} onDragOver={onDragOver}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        nodeTypes={nodeTypes}
         fitView
       >
         <Background />
@@ -53,5 +102,16 @@ export default function FlowBuilder() {
         <MiniMap />
       </ReactFlow>
     </div>
-  )
+  );
+}
+
+export default function FlowBuilder() {
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <ReactFlowProvider>
+        <FlowCanvas />
+      </ReactFlowProvider>
+    </div>
+  );
 }
